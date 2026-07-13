@@ -27,6 +27,16 @@
 
 `tracker/index.html` 可直接作为本地进度面板使用；`index.html` 如果你是双击打开，浏览器通常会拦截读取本地 markdown，所以建议在这个文件夹下起一个本地服务器再看学习页。
 
+## 在线访问
+
+| 入口 | 地址 |
+|---|---|
+| 学习站 | [amn765.github.io/group_study](https://amn765.github.io/group_study/) |
+| 打卡面板 | [amn765.github.io/group_study/tracker](https://amn765.github.io/group_study/tracker/) |
+| GitHub 仓库 | [github.com/amn765/group_study](https://github.com/amn765/group_study) |
+
+进度保存在当前浏览器的 `localStorage` 中。换设备或浏览器时，请在打卡面板使用“导出进度 / 导入进度”迁移。
+
 ## 怎么学
 
 1. 先打开打卡面板，勾任务，保住连续性。
