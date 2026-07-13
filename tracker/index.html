@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>群、李群与李代数入门 · 进度面板</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --panel2: #1c2330; --border: #30363d;
+    --text: #e6edf3; --muted: #8b949e; --accent: #2dd4bf;
+    --green: #3fb950; --blue: #58a6ff;
+    --hm0: #21262d; --hm1: #17453f; --hm2: #1f6f67; --hm3: #28a79b; --hm4: #54e0d0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+    line-height: 1.6; padding: 24px 16px 80px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  h1 { font-size: 26px; display: flex; align-items: center; gap: 10px; }
+  h1 .flame { font-size: 28px; }
+  .subtitle { color: var(--muted); margin: 4px 0 24px; font-size: 14px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px; text-align: center;
+  }
+  .stat .num { font-size: 30px; font-weight: 700; color: var(--accent); }
+  .stat .num.green { color: var(--green); }
+  .stat .num.blue { color: var(--blue); }
+  .stat .label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .overall {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px; margin-bottom: 20px;
+  }
+  .overall .row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .overall .title-sm { font-size: 14px; color: var(--muted); }
+  .overall .pct { font-size: 20px; font-weight: 700; }
+  .bar { height: 14px; background: var(--hm0); border-radius: 7px; overflow: hidden; }
+  .bar > div {
+    height: 100%; border-radius: 7px;
+    background: linear-gradient(90deg, var(--hm3), var(--accent));
+    transition: width .5s ease;
+  }
+  .milestone { margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .milestone b { color: var(--text); }
+  .heat-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px; margin-bottom: 20px;
+  }
+  .heat-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 12px; }
+  .heat-head h2 { font-size: 15px; }
+  #checkinBtn {
+    background: var(--accent); color: #fff; border: none; border-radius: 8px;
+    padding: 8px 16px; font-size: 14px; cursor: pointer; font-weight: 600;
+  }
+  #checkinBtn:disabled { background: var(--green); cursor: default; }
+  #heatmap { display: flex; gap: 3px; overflow-x: auto; padding-bottom: 4px; }
+  .hm-col { display: flex; flex-direction: column; gap: 3px; }
+  .hm-cell { width: 12px; height: 12px; border-radius: 3px; background: var(--hm0); flex-shrink: 0; }
+  .hm-cell.l1 { background: var(--hm1); } .hm-cell.l2 { background: var(--hm2); }
+  .hm-cell.l3 { background: var(--hm3); } .hm-cell.l4 { background: var(--hm4); }
+  .hm-cell.today { outline: 1.5px solid var(--blue); }
+  .heat-legend { display: flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 11px; color: var(--muted); justify-content: flex-end; }
+  .stage {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    margin-bottom: 12px; overflow: hidden;
+  }
+  .stage-head {
+    display: flex; align-items: center; gap: 12px; padding: 14px 18px; cursor: pointer;
+    user-select: none;
+  }
+  .stage-head:hover { background: var(--panel2); }
+  .stage-head .arrow { color: var(--muted); transition: transform .2s; font-size: 12px; }
+  .stage.open .arrow { transform: rotate(90deg); }
+  .stage-head .name { font-weight: 600; flex: 1; }
+  .stage-head .name .days { color: var(--muted); font-weight: 400; font-size: 12px; margin-left: 8px; }
+  .stage-head .doc-link { text-decoration: none; font-size: 15px; flex-shrink: 0; padding: 2px 4px; }
+  .stage-head .mini-bar { width: 110px; height: 8px; background: var(--hm0); border-radius: 4px; overflow: hidden; flex-shrink: 0; }
+  .stage-head .mini-bar > div { height: 100%; background: var(--accent); border-radius: 4px; transition: width .4s; }
+  .stage-head .count { font-size: 12px; color: var(--muted); width: 44px; text-align: right; flex-shrink: 0; }
+  .stage-head .trophy { width: 22px; text-align: center; }
+  .stage-body { display: none; border-top: 1px solid var(--border); padding: 8px 18px 14px; }
+  .stage.open .stage-body { display: block; }
+  .task { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; }
+  .task input { margin-top: 5px; width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+  .task label { cursor: pointer; font-size: 14px; }
+  .task.done label { color: var(--muted); text-decoration: line-through; }
+  .task .date { font-size: 11px; color: var(--green); margin-left: 8px; text-decoration: none; display: inline-block; }
+  .tools { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+  .tools button {
+    background: var(--panel); color: var(--muted); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 14px; font-size: 13px; cursor: pointer;
+  }
+  .tools button:hover { color: var(--text); border-color: var(--muted); }
+  .tools button.danger:hover { color: #f85149; border-color: #f85149; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 10px; }
+  @media (max-width: 640px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1><span class="flame">🧭</span> 群、李群与李代数入门 · 进度面板</h1>
+  <p class="subtitle">从线代和微积分出发，只看群、李群和李代数的基础直觉 —— 每天只推进一点点，曲线会自己变清楚。 <a href="../index.html" style="color:var(--blue);text-decoration:none">📖 打开学习文档 ›</a></p>
+
+  <div class="stats">
+    <div class="stat"><div class="num" id="statPct">0%</div><div class="label">总进度</div></div>
+    <div class="stat"><div class="num blue" id="statDone">0/0</div><div class="label">已完成任务</div></div>
+    <div class="stat"><div class="num green" id="statStreak">0</div><div class="label">连续学习天数 🔥</div></div>
+    <div class="stat"><div class="num blue" id="statDays">0</div><div class="label">累计学习天数</div></div>
+  </div>
+
+  <div class="overall">
+    <div class="row">
+      <span class="title-sm">总体进度</span>
+      <span class="pct" id="overallPct">0%</span>
+    </div>
+    <div class="bar"><div id="overallBar" style="width:0%"></div></div>
+    <div class="milestone" id="milestone"></div>
+  </div>
+
+  <div class="heat-card">
+    <div class="heat-head">
+      <h2>📆 学习热力图（近 26 周）</h2>
+      <button id="checkinBtn" onclick="checkinToday()">今日打卡 ✓</button>
+    </div>
+    <div id="heatmap"></div>
+    <div class="heat-legend">
+      少 <span class="hm-cell"></span><span class="hm-cell l1"></span><span class="hm-cell l2"></span><span class="hm-cell l3"></span><span class="hm-cell l4"></span> 多
+    </div>
+  </div>
+
+  <div id="stages"></div>
+
+  <div class="tools">
+    <button onclick="exportData()">📤 导出进度</button>
+    <button onclick="document.getElementById('importFile').click()">📥 导入进度</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)">
+    <button class="danger" onclick="resetData()">🗑 重置全部</button>
+  </div>
+  <p class="hint">进度保存在浏览器本地（localStorage）。换浏览器或重装系统前，请先“导出进度”备份。</p>
+</div>
+
+<script>
+const STAGES = [
+  { id:'s0', name:'阶段 0 · 先把群说成人话', days:'约 1 天', tasks:[
+    '0-1 把“运算”先看成一个动作',
+    '0-2 先抓住“做完还在里面、还退得回去”',
+    '0-3 用对称动作理解群',
+    '0-4 把群翻译成自己的话'
+  ]},
+  { id:'s1', name:'阶段 1 · 四条公理和标准例子', days:'约 1 天', tasks:[
+    '1-1 逐条认识群的四条公理',
+    '1-2 看懂两个最标准的例子',
+    '1-3 找一个不合格的例子',
+    '1-4 会判断一个对象是不是群'
+  ]},
+  { id:'s2', name:'阶段 2 · 子群、循环群和同态', days:'约 1 天', tasks:[
+    '2-1 子群就是“更小的群”',
+    '2-2 循环群就是反复做同一个元素',
+    '2-3 群同态就是保结构的翻译',
+    '2-4 用三个例子做小测'
+  ]},
+  { id:'s3', name:'阶段 3 · 从矩阵群到李群', days:'约 1 天', tasks:[
+    '3-1 把可逆矩阵看成一个群',
+    '3-2 看懂旋转群 SO(2)',
+    '3-3 抓住“连续变化”这条线',
+    '3-4 知道为什么这就叫李群'
+  ]},
+  { id:'s4', name:'阶段 4 · 常见李群与直观图像', days:'约 1 天', tasks:[
+    '4-1 把 R^n 和 R^+ 看成李群',
+    '4-2 把单位圆和三维旋转连起来',
+    '4-3 先把指数映射当成“累积小动作”',
+    '4-4 做一次 1 分钟口头复述'
+  ]},
+  { id:'s5', name:'阶段 5 · 李代数的直观含义', days:'约 2 天', tasks:[
+    '5-1 把李代数想成单位元附近的线性影子',
+    '5-2 用一个矩阵看懂“生成器”',
+    '5-3 把李括号理解成“不交换的偏差”',
+    '5-4 画出“群—李群—李代数”三层图'
+  ]},
+];
+
+const MILESTONES = [
+  [0, '刚刚启程'],
+  [4, '认清群的四条公理'],
+  [8, '会举标准例子'],
+  [12, '会说子群和同态'],
+  [16, '看懂李群的连续直觉'],
+  [20, '看懂常见李群'],
+  [24, '能讲清李代数的直观']
+];
+
+const KEY = 'group-lie-study-v1';
+let state = load();
+
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if (s && s.done && s.checkins) return s;
+  } catch (e) {}
+  return { done: {}, checkins: {}, openStage: 's0' };
+}
+function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
+
+function todayStr(d) {
+  d = d || new Date();
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), dd = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + dd;
+}
+
+function toggleTask(tid) {
+  if (state.done[tid]) delete state.done[tid];
+  else state.done[tid] = todayStr();
+  save(); render();
+}
+
+function checkinToday() {
+  state.checkins[todayStr()] = true;
+  save(); render();
+}
+
+function toggleStage(sid) {
+  state.openStage = (state.openStage === sid) ? null : sid;
+  save(); render();
+}
+
+function activityByDate() {
+  const map = {};
+  for (const tid in state.done) {
+    const d = state.done[tid];
+    map[d] = (map[d] || 0) + 1;
+  }
+  for (const d in state.checkins) map[d] = (map[d] || 0) + 1;
+  return map;
+}
+
+function calcStreak(act) {
+  let streak = 0;
+  const day = new Date();
+  if (!act[todayStr(day)]) day.setDate(day.getDate() - 1);
+  while (act[todayStr(day)]) { streak++; day.setDate(day.getDate() - 1); }
+  return streak;
+}
+
+function render() {
+  const act = activityByDate();
+  const total = STAGES.reduce((n, s) => n + s.tasks.length, 0);
+  const done = Object.keys(state.done).length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+
+  document.getElementById('statPct').textContent = pct + '%';
+  document.getElementById('statDone').textContent = done + '/' + total;
+  document.getElementById('statStreak').textContent = calcStreak(act);
+  document.getElementById('statDays').textContent = Object.keys(act).length;
+  document.getElementById('overallPct').textContent = pct + '%';
+  document.getElementById('overallBar').style.width = pct + '%';
+
+  let ms = MILESTONES[0];
+  for (const m of MILESTONES) if (done >= m[0]) ms = m;
+  let next = MILESTONES.find(m => m[0] > done);
+  document.getElementById('milestone').innerHTML =
+    '当前称号：<b>' + ms[1] + '</b>' +
+    (next ? ' · 再完成 <b>' + (next[0] - done) + '</b> 个任务解锁下一个称号' : '');
+
+  const btn = document.getElementById('checkinBtn');
+  if (act[todayStr()]) { btn.disabled = true; btn.textContent = '今日已学习 ✓'; }
+  else { btn.disabled = false; btn.textContent = '今日打卡 ✓'; }
+
+  renderHeatmap(act);
+  renderStages();
+}
+
+function renderHeatmap(act) {
+  const el = document.getElementById('heatmap');
+  el.innerHTML = '';
+  const today = new Date();
+  const end = new Date(today);
+  end.setDate(end.getDate() + (6 - end.getDay()));
+  const start = new Date(end);
+  start.setDate(start.getDate() - 26 * 7 + 1);
+
+  let col = null;
+  const cur = new Date(start);
+  const tStr = todayStr();
+  while (cur <= end) {
+    if (cur.getDay() === 0 || !col) { col = document.createElement('div'); col.className = 'hm-col'; el.appendChild(col); }
+    const cell = document.createElement('div');
+    const ds = todayStr(cur);
+    const n = act[ds] || 0;
+    let lv = 0;
+    if (n >= 1) lv = 1; if (n >= 2) lv = 2; if (n >= 3) lv = 3; if (n >= 5) lv = 4;
+    cell.className = 'hm-cell' + (lv ? ' l' + lv : '') + (ds === tStr ? ' today' : '');
+    if (cur > today) cell.style.visibility = 'hidden';
+    cell.title = ds + '：' + n + ' 项学习记录';
+    col.appendChild(cell);
+    cur.setDate(cur.getDate() + 1);
+  }
+  el.scrollLeft = el.scrollWidth;
+}
+
+function renderStages() {
+  const el = document.getElementById('stages');
+  el.innerHTML = '';
+  STAGES.forEach(s => {
+    const doneN = s.tasks.filter((_, i) => state.done[s.id + 't' + i]).length;
+    const pct = Math.round(doneN / s.tasks.length * 100);
+    const open = state.openStage === s.id;
+
+    const card = document.createElement('div');
+    card.className = 'stage' + (open ? ' open' : '');
+
+    const head = document.createElement('div');
+    head.className = 'stage-head';
+    head.onclick = () => toggleStage(s.id);
+    head.innerHTML =
+      '<span class="arrow">▶</span>' +
+      '<span class="name">' + s.name + '<span class="days">' + s.days + '</span></span>' +
+      '<a class="doc-link" href="../index.html#' + s.id + '" title="打开学习文档" onclick="event.stopPropagation()">📖</a>' +
+      '<span class="trophy">' + (doneN === s.tasks.length ? '🏆' : '') + '</span>' +
+      '<div class="mini-bar"><div style="width:' + pct + '%"></div></div>' +
+      '<span class="count">' + doneN + '/' + s.tasks.length + '</span>';
+    card.appendChild(head);
+
+    const body = document.createElement('div');
+    body.className = 'stage-body';
+    s.tasks.forEach((t, i) => {
+      const tid = s.id + 't' + i;
+      const checked = !!state.done[tid];
+      const row = document.createElement('div');
+      row.className = 'task' + (checked ? ' done' : '');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.id = tid; cb.checked = checked;
+      cb.onchange = () => toggleTask(tid);
+      const label = document.createElement('label');
+      label.htmlFor = tid;
+      label.textContent = t;
+      if (checked) {
+        const d = document.createElement('span');
+        d.className = 'date'; d.textContent = '✓ ' + state.done[tid];
+        label.appendChild(d);
+      }
+      row.appendChild(cb); row.appendChild(label);
+      body.appendChild(row);
+    });
+    card.appendChild(body);
+    el.appendChild(card);
+  });
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'group-lie-study-v1-' + todayStr() + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function importData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const s = JSON.parse(e.target.result);
+      if (!s.done || !s.checkins) throw new Error('格式不对');
+      state = s; save(); render();
+      alert('导入成功！');
+    } catch (err) { alert('导入失败：不是有效的进度文件'); }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+function resetData() {
+  if (confirm('确定要清空全部进度吗？此操作不可恢复（建议先导出备份）。')) {
+    state = { done: {}, checkins: {}, openStage: 's0' };
+    save(); render();
+  }
+}
+
+render();
+window.addEventListener('pageshow', () => { state = load(); render(); });
+</script>
+</body>
+</html>
